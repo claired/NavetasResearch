@@ -75,84 +75,103 @@ float getCurrent(){
 //queue selected since it is a simple way to keep track of first in first out (FIFO) data, apt for sliding windows.
 //multiset chosen, because ordered data with (O)logn search and allows multiple entrants
 
-int main(){
-	std::string filename="../data/output.txt";
-	int windowSize=100000;
-	int medianPoint = windowSize/2;
 
-//initialise datastructures
-  	std::queue<float> windowQueue;
-	std::multiset<float> window;
-	//median is an iterator that will keep track of the median point.
-	std::multiset<float>::iterator median = window.begin();
+/////////////////MEDIAN FILTER CLASS (to refactor later)//////////////
+
+unsigned int windowSize;
+std::string filename;
+std::queue<float> windowQueue;
+std::multiset<float> window;
+unsigned int medianPoint;
+//median is an iterator that will keep track of the median point.
+std::multiset<float>::iterator median;
+
+void initialise (int windowSize_in, std::string filename_in){
+	//initialise datastructures
+	windowSize=windowSize_in;
+	filename=filename_in;
+	median = window.begin();
+	medianPoint =windowSize/2;
 	for (int i=0; i<windowSize; i++){
 		windowQueue.push(0.0);
 		window.insert(0.0);
 		if (i<=medianPoint) median++;		
 	}
+}
 
-
-	float current=-1.0;
+void slideWindow(float current, unsigned int numRecordsAnalysed){
+	float directionOfMedian=0;
 	float nextInQueue;
+	if (numRecordsAnalysed>=windowSize){
+		nextInQueue=windowQueue.front();
+		std::multiset<float>::iterator firstMatchNextInQueue=window.equal_range(nextInQueue).first;		
+		if (firstMatchNextInQueue==median){
+			directionOfMedian=directionOfMedian-0.5; 
+			//logic explanation :
+			// => +0.5 (-1) =-0.5, -1 because median incremented here
+			median++; 
+			window.erase(window.equal_range(nextInQueue).first);
+		}else{
+			window.erase(window.equal_range(nextInQueue).first);
+			if (nextInQueue>*median) directionOfMedian=directionOfMedian-0.5;
+			else directionOfMedian=directionOfMedian+0.5; 
+			// Logic explanation :
+			//if (nextInQueue<=*median) ; equality tested here, the firstMatchNextInQueue is the 
+			//first entry that matches the nextInQueue. If there is an equality here and we know 
+			//it is not the median value, it must be below the median.
+		}
+		window.insert(current);
+		if (current<*median)directionOfMedian=directionOfMedian-0.5;
+		else directionOfMedian=directionOfMedian+0.5;
+		//Logic explanation :
+		//if current==median, window will insert current after previous instances of the value, 
+		// thus we can consider current==median to be equivallent to current>median
+
+		if(directionOfMedian==1)median++; 
+		else if(directionOfMedian==-1)median--;
+		else if(directionOfMedian!=0)std::cout<<"unexpected property"<<std::endl;
+	}
+	else{	
+		//to improve performance
+		//assuming window is populated with 0s initially and multiset is ordered
+		window.erase(window.begin());
+		window.insert(current);
+		//directionOfMedian=1;
+		median++;
+	}
+
+}
+
+void evaluation(){
+
 	if (initFileForProcessing(filename))  {		
-		int count=0;
+		int numRecordsAnalysed=0;	
+		float current=-1.0;
+		
 		// get data until file is empty.
 		while ((current=getCurrent())!=-1.0){
-			float directionOfMedian=0;
-			if (count>=windowSize){
-
-				nextInQueue=windowQueue.front();
-				std::multiset<float>::iterator firstMatchNextInQueue=window.equal_range(nextInQueue).first;		
-				if (firstMatchNextInQueue==median){
-					directionOfMedian=directionOfMedian-0.5; 
-					//logic explanation :
-					// => +0.5 (-1) =-0.5, -1 because median incremented here
-					median++; 
-					window.erase(window.equal_range(nextInQueue).first);
-				}else{
-					window.erase(window.equal_range(nextInQueue).first);
-					if (nextInQueue>*median) directionOfMedian=directionOfMedian-0.5;
-					else directionOfMedian=directionOfMedian+0.5; 
-					// Logic explanation :
-					//if (nextInQueue<=*median) ; equality tested here, the firstMatchNextInQueue is the 
-					//first entry that matches the nextInQueue. If there is an equality here and we know 
-					//it is not the median value, it must be below the median.
-		
-
-
-				}
-
-			}
-			else{
-				window.erase(window.begin());
-				directionOfMedian=directionOfMedian+0.5;
-			}
-
-			window.insert(current);
-			if (current<*median)directionOfMedian=directionOfMedian-0.5;
-			else directionOfMedian=directionOfMedian+0.5;
-			//Logic explanation :
-			//if current==median, window will insert current after previous instances of the value, 
-			// thus we can consider current==median to be equivallent to current>median
-			
-			if(directionOfMedian==1)median++; 
-			else if(directionOfMedian==-1)median--;
-			else if(directionOfMedian!=0)std::cout<<"unexpected property"<<std::endl;
-
+			slideWindow(current, numRecordsAnalysed);
 	      		float out_median=*median;//(a+b)/2;
 		//print for now - this needs work, in the case window.size() is even
-
-		//std::cout<<out_median<<count<<std::endl;
+		//std::cout<<out_median<<numRecordsAnalysed<<std::endl;
 			windowQueue.push(current);
 			windowQueue.pop();	
-			count++;
+			numRecordsAnalysed++;
 		}
 	
 	}
-
-
-	
 	closeFile();
+}
+
+/////////////////MEDIAN FILTER CLASS end (to refactor later)//////////////
+
+int main(){
+	std::string filename="../data/output.txt";
+	int windowSize=100000;
+
+	initialise(windowSize, filename);
+	evaluation();
+
 	return 0;       
 }    
 
