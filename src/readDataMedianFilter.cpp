@@ -1,5 +1,6 @@
-#include <fstream>
+
 #include <iostream>
+#include <fstream>
 #include <string.h>   
 #include <stdio.h>
 const int hashSize = 16;
@@ -10,9 +11,29 @@ const int hashSize = 16;
 
 //private vars for data reading - move in to separate class when initial dev done
 unsigned int records = 0;
+std::ifstream fin;
 
+void closeFile(){
+	fin.close();
+}
 
-float getCurrent(std::ifstream &fin){
+bool initFileForProcessing(std::string filename){
+	fin.open(filename.c_str(), std::ios::in|std::ios::binary);
+	if (fin.is_open()){
+	//skip hash for now, assume the has has been checked on reciept of data
+		for (int i =0 ; i< hashSize; i++){
+			fin.ignore();
+	        }
+		std::cout<<filename<<std::endl;
+		return true;
+	}
+	else {
+		std::cerr<<"Error openning file"<<std::endl;
+		return false;
+	}
+}
+
+float getCurrent(){
 	float current;
 	char buffer_records[4];
 	char buffer_currVolt[4];
@@ -37,7 +58,7 @@ float getCurrent(std::ifstream &fin){
 				
 
 	//just print for now, do something smarter later
-	//std::cout<<records<<"c "<<current<<std::endl;		
+	std::cout<<records<<"c "<<current<<std::endl;		
 
 	//decrement records for next call
 	records--;
@@ -50,24 +71,17 @@ int main(){
 	std::string filename="../data/output.txt";
 	int windowSize=100000;
 	int medianPoint = windowSize/2;
-  
-	std::ifstream fin(filename.c_str(), std::ios::in|std::ios::binary);
-	if (fin.is_open()){
-	//skip hash for now, assume the has has been checked on reciept of data
-		for (int i =0 ; i< hashSize; i++){
-			fin.ignore();
-	        }
-		std::cout<<filename<<std::endl;
 
+	if (initFileForProcessing(filename))  {
 		float current=-1.0;
 		// loop through a series of blocks of data
-		while ((current=getCurrent(fin))!=-1.0){
+		while ((current=getCurrent())!=-1.0){
 
 		
 		}
 
 	}
-	fin.close();
+	closeFile();
 	return 0;       
 }    
 
