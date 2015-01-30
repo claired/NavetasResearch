@@ -10,8 +10,8 @@ const int hashSize = 16;
 //tasks
 //1 Reads data files generated using gen_data.py --Done--
 //2 Start with an initial window of 100,000 zeros --Done--
-//3 Runs an online median filter over the current values with a window size of 100,000. --Doing--
-//4 write
+//3 Runs an online median filter over the current values with a window size of 100,000. --Done--
+//4 write --Doing--
 
 
 /////////////////READ DATA CLASS (to refactor later)//////////////
@@ -79,19 +79,27 @@ float getCurrent(){
 /////////////////MEDIAN FILTER CLASS (to refactor later)//////////////
 
 unsigned int windowSize;
-std::string filename;
+bool isWindowSizeEven;
+
+std::string inputFilename;
+std::string outputFilename;
 std::queue<float> windowQueue;
 std::multiset<float> window;
 unsigned int medianPoint;
 //median is an iterator that will keep track of the median point.
 std::multiset<float>::iterator median;
 
-void initialise (int windowSize_in, std::string filename_in){
+
+void initialise (std::string inputFilename_in, std::string outputFilename_in,int windowSize_in){
 	//initialise datastructures
 	windowSize=windowSize_in;
-	filename=filename_in;
+	inputFilename=inputFilename_in;
+	outputFilename=outputFilename_in;
+	if (windowSize % 2 == 0 ) isWindowSizeEven=true;
+	else isWindowSizeEven=false;
 	median = window.begin();
 	medianPoint =windowSize/2;
+
 	for (int i=0; i<windowSize; i++){
 		windowQueue.push(0.0);
 		window.insert(0.0);
@@ -143,33 +151,45 @@ void slideWindow(float current, unsigned int numRecordsAnalysed){
 }
 
 void evaluation(){
-
-	if (initFileForProcessing(filename))  {		
+	if(window.size()==0){
+		std::cerr<<"ensure you have initialised the currentMedianFilter"<<std::endl;
+		return;
+	}
+  	std::ofstream outputFile (outputFilename.c_str());
+	if (initFileForProcessing(inputFilename) && outputFile.is_open() )  {		
 		int numRecordsAnalysed=0;	
 		float current=-1.0;
 		
 		// get data until file is empty.
 		while ((current=getCurrent())!=-1.0){
 			slideWindow(current, numRecordsAnalysed);
-	      		float out_median=*median;//(a+b)/2;
-		//print for now - this needs work, in the case window.size() is even
-		//std::cout<<out_median<<numRecordsAnalysed<<std::endl;
+	      		float medianVal=*median;
+			if(isWindowSizeEven){
+				median--;
+				medianVal=(medianVal+*median)/2;
+				median++;
+			}
+			outputFile<<medianVal<<"\n";
 			windowQueue.push(current);
 			windowQueue.pop();	
 			numRecordsAnalysed++;
+
 		}
-	
+		closeFile();	
+		outputFile.close();
 	}
-	closeFile();
+	
+
 }
 
 /////////////////MEDIAN FILTER CLASS end (to refactor later)//////////////
 
 int main(){
-	std::string filename="../data/output.txt";
-	int windowSize=100000;
-
-	initialise(windowSize, filename);
+	std::string inputFilename="data/output.txt";
+	std::string outputFilename="data/median_out.txt";
+	
+	int windowSize=10;
+	initialise(inputFilename, outputFilename, windowSize);
 	evaluation();
 
 	return 0;       
