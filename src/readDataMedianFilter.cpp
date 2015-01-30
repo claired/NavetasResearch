@@ -2,8 +2,6 @@
 #include <iostream>
 #include <stdio.h>
 #include <string.h>   
-//#0 255 is 8 bits
-//#2^16 is 16
 
 const int hashSize = 16;
 const int BLOCK_COUNT_RANGE_MIN = 50000;
