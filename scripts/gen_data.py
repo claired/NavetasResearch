@@ -51,6 +51,7 @@ for i in range( random.randint(*BLOCK_COUNT_RANGE) ):
     for j in range( records ):
         voltage = random.random() * 330
         current = random.random() * 10
+	print current
 
         #Track the average
         count += 1

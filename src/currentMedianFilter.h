@@ -14,8 +14,8 @@ class currentMedianFilter{
 private:
 	unsigned int windowSize;
 	bool isWindowSizeEven;
-	char *inputFilename;
-	char *outputFilename;
+	const char *inputFilename;
+	const char *outputFilename;
 	std::queue<float> windowQueue;
 	std::multiset<float> window;
 	unsigned int medianPoint;
@@ -23,7 +23,7 @@ private:
 	std::multiset<float>::iterator median;
 
 public:
-	void initialise (char *, char *, unsigned int );
+	void initialise (const char *, const char *, unsigned int );
 	void evaluation();
 	void slideWindow(float , unsigned int );
 	float getMedianValue();

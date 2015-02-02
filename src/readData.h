@@ -12,7 +12,7 @@ class readData{
 	
 	public:
 		void closeFile();
-		bool initFileForProcessing(char *);
-		float getCurrent();
+		bool initFileForProcessing(const char *);
+		bool getCurrent(float &);
 
 };

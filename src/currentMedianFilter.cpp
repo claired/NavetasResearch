@@ -3,7 +3,7 @@
 
 
 //initialises datastructures used within class; including queue and multiset populated with windowSize of 0s
-void currentMedianFilter::initialise (char *inputFilename_in, char *outputFilename_in,unsigned int windowSize_in){
+void currentMedianFilter::initialise (const char *inputFilename_in,const char *outputFilename_in,unsigned int windowSize_in){
 	//initialise datastructures
 	windowSize=windowSize_in;
 	inputFilename=inputFilename_in;
@@ -27,7 +27,8 @@ void currentMedianFilter::initialise (char *inputFilename_in, char *outputFilena
 void currentMedianFilter::slideWindow(float current, unsigned int numRecordsAnalysed){
 	float directionOfMedian=0;
 	float nextInQueue;
-	if (numRecordsAnalysed>=windowSize){
+	if (numRecordsAnalysed>=(windowSize/2)){
+		//1) erase record at the back of the window
 		nextInQueue=windowQueue.front();
 		std::multiset<float>::iterator firstMatchNextInQueue=window.equal_range(nextInQueue).first;		
 		if (firstMatchNextInQueue==median){
@@ -45,6 +46,7 @@ void currentMedianFilter::slideWindow(float current, unsigned int numRecordsAnal
 			//first entry that matches the nextInQueue. If there is an equality here and we know 
 			//it is not the median value, it must be below the median.
 		}
+		//2) insert new record at the front of the window
 		window.insert(current);
 		if (current<*median)directionOfMedian=directionOfMedian-0.5;
 		else directionOfMedian=directionOfMedian+0.5;
@@ -52,16 +54,16 @@ void currentMedianFilter::slideWindow(float current, unsigned int numRecordsAnal
 		//if current==median, window will insert current after previous instances of the value, 
 		// thus we can consider current==median to be equivallent to current>median
 
+		//3) consoladate the direction the median point (iterator) should go
 		if(directionOfMedian==1)median++; 
 		else if(directionOfMedian==-1)median--;
-		else if(directionOfMedian!=0)std::cout<<"unexpected property"<<std::endl;
+		else if(directionOfMedian!=0)std::cerr<<"unexpected property"<<std::endl;
 	}
 	else{	
 		//to improve performance
 		//assuming window is populated with 0s initially and multiset is ordered
 		window.erase(window.begin());
 		window.insert(current);
-		//directionOfMedian=1;
 		median++;
 	}
 
@@ -80,7 +82,7 @@ float currentMedianFilter::getMedianValue(){
 	return medianVal;
 }
 
-//read records from file, call the functions to process data and print output to another file.
+//read records from file, process data and print output to another file.
 void currentMedianFilter::evaluation(){
 	if(window.size()==0){
 		std::cerr<<"ensure you have initialised the currentMedianFilter"<<std::endl;
@@ -93,7 +95,7 @@ void currentMedianFilter::evaluation(){
 		float current=-1.0;
 		
 		// get data until file is empty.
-		while ((current=inputFile.getCurrent())!=-1.0){
+		while (inputFile.getCurrent(current)){
 			slideWindow(current, numRecordsAnalysed);
 	      		float medianVal = getMedianValue();
 			outputFile<<medianVal<<"\n";

@@ -5,7 +5,7 @@ void readData::closeFile(){
 	fin.close();
 }
 
-bool readData::initFileForProcessing(char *filename){
+bool readData::initFileForProcessing(const char *filename){
 	records = 0;
 	fin.open(filename, std::ios::in|std::ios::binary);
 	if (fin.is_open()){
@@ -22,8 +22,8 @@ bool readData::initFileForProcessing(char *filename){
 	}
 }
 
-float readData::getCurrent(){
-	float current;
+bool readData::getCurrent(float &current){
+	
 	char buffer_records[4];
 	char buffer_currVolt[4];
 	//see if there any records in this block left
@@ -35,7 +35,7 @@ float readData::getCurrent(){
 			records=buffer_records[0] | (buffer_records[1]<<8) | (buffer_records[2]<<16) | (buffer_records[3]<<24);
 		else
 			//if fin.read is 0, means EoF
-			return -1.0;
+			return false;
 	}
 
 
@@ -48,7 +48,7 @@ float readData::getCurrent(){
 	//decrement records for next call
 	records--;
 
-	return current;
+	return true;
 
 
 }
